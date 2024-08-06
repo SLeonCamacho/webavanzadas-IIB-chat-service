@@ -1,9 +1,21 @@
 require('dotenv').config();
+const express = require('express');
 const WebSocket = require('ws');
 
-const wss = new WebSocket.Server({ port: process.env.PORT }, () => {
-  console.log(`WebSocket server started on ws://localhost:${process.env.PORT}`);
+const app = express();
+const port = process.env.PORT || 3003;
+
+app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.send('Chat service running');
 });
+
+const server = app.listen(port, () => {
+  console.log(`Chat service running on port ${port}`);
+});
+
+const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws) => {
   console.log('Client connected');
