@@ -1,8 +1,10 @@
 require('dotenv').config();
 const express = require('express');
-const WebSocket = require('ws');
+const expressWs = require('express-ws');
 
 const app = express();
+expressWs(app);
+
 const port = process.env.PORT || 3003;
 
 app.use(express.json());
@@ -11,20 +13,14 @@ app.get('/', (req, res) => {
   res.send('Chat service running');
 });
 
-const server = app.listen(port, () => {
-  console.log(`Chat service running on port ${port}`);
-});
-
-const wss = new WebSocket.Server({ server });
-
-wss.on('connection', (ws) => {
+app.ws('/chat', (ws, req) => {
   console.log('Client connected');
 
   ws.on('message', (message) => {
     console.log(`Received: ${message}`);
     const data = JSON.parse(message);
 
-    wss.clients.forEach(client => {
+    app.ws.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({
           user: data.user,
@@ -35,8 +31,16 @@ wss.on('connection', (ws) => {
   });
 
   ws.send(JSON.stringify({ user: 'Server', text: 'Welcome to the chat!' }));
+
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
 });
 
-wss.on('error', (error) => {
+app.listen(port, () => {
+  console.log(`Chat service running on port ${port}`);
+});
+
+app.on('error', (error) => {
   console.error(`WebSocket server error: ${error}`);
 });
